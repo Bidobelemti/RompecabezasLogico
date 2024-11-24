@@ -3,61 +3,91 @@ from sympy import sympify, symbols, And, Not
 from sympy.logic.boolalg import to_cnf, And, Or, Equivalent
 
 class KB:
-    """A knowledge base to which you can tell and ask sentences.
-    To create a KB, first subclass this class and implement
-    tell, ask_generator, and retract. Why ask_generator instead of ask?
-    The book is a bit vague on what ask means --
-    For a Propositional Logic KB, ask(P & Q) returns True or False, but for an
-    FOL KB, something like ask(Brother(x, y)) might return many substitutions
-    such as {x: Cain, y: Abel}, {x: Abel, y: Cain}, {x: George, y: Jeb}, etc.
-    So ask_generator generates these one at a time, and ask either returns the
-    first one or returns False."""
+    """
+    Base de Conocimiento (Knowledge Base, KB) para almacenar y consultar conocimiento lógico.
+    Esta clase actúa como base para construir sistemas lógicos más específicos.
+    
+    Métodos que deben implementarse en subclases:
+    - `tell`: Añadir sentencias a la base de conocimiento.
+    - `ask_generator`: Generar sustituciones que hacen verdadera una consulta.
+    - `retract`: Eliminar sentencias de la base de conocimiento.
+    """
 
     def __init__(self, sentence=None):
+        """
+        Inicializa la base de conocimiento con una sentencia
+        """
         if sentence:
             self.tell(sentence)
 
     def tell(self, sentence):
-        """Add the sentence to the KB."""
+        """
+        Anñade una sentencia a la base de conocimiento
+        """
         raise NotImplementedError
 
     def ask(self, query):
-        """Return a substitution that makes the query true, or, failing that, return False."""
+        """
+        Consulta la base de conocimeinto para verificar si una consulta es
+        verdadera. Retorna la primera sustitución encontrada que hace
+        verdadera la consulta o falsa.
+        """
         return first(self.ask_generator(query), default=False)
 
     def ask_generator(self, query):
-        """Yield all the substitutions that make query true."""
+        """
+        Generador que devuelve todas las sustituciones que hacen verdadera
+        la consulta.
+        """
         raise NotImplementedError
 
     def retract(self, sentence):
-        """Remove sentence from the KB."""
+        """
+        Remueve una sentencia de la base de conocimiento
+        """
         raise NotImplementedError
 
 
 class PropKB(KB):
-    """A KB for propositional logic. Inefficient, with no indexing."""
+    """
+    Base de conocimiento de lógica proposicional.
+    """
 
     def __init__(self, sentence=None):
+        """
+        Inicializa la base de conocimiento y opcionalmente añade una sentencia.
+        """
         super().__init__(sentence)
         self.clauses = []
 
     def tell(self, sentence):
-        """Add the sentence's clauses to the KB."""
+        """
+        Convierte una sentencia a forma normal conjuntiva (CNF) y añade sus
+        cláusulas a la base.
+        """
         self.clauses.extend(conjuncts(to_cnf(sentence)))
 
     def ask_generator(self, query):
-        """Yield the empty substitution {} if KB entails query; else no results."""
+        """
+        Generador que produce sustituciones si la base de conocimiento
+        implica la consulta.
+        """
         if pl_resolution(self, query):
             yield {}
 
     def ask_if_true(self, query):
-        """Return True if the KB entails query, else return False."""
+        """
+        Consulta si la base de conocimiento implica la consulta. Retorna
+        verdadero si es implicada, caso contrario retorna falso.
+        """
         for _ in self.ask_generator(query):
             return True
         return False
 
     def retract(self, sentence):
-        """Remove the sentence's clauses from the KB."""
+        """
+        Remueve las cláusulas de una sentencia de la base de conocimiento.
+        """
         for c in conjuncts(to_cnf(sentence)):
             if c in self.clauses:
                 self.clauses.remove(c)
@@ -68,9 +98,8 @@ class PropKB(KB):
 
 def pl_resolution(kb, alpha):
     """
-    Propositional-logic resolution: say if alpha follows from KB.
-    >>> pl_resolution(horn_clauses_KB, A)
-    True
+    Algoritmo de resolución para lógica proposicional. Verifica si una 
+    consulta alpha es implicada por la base de conocimiento kb
     """
     clauses = kb.clauses + conjuncts(to_cnf(~alpha))
     new = set()
@@ -91,7 +120,10 @@ def pl_resolution(kb, alpha):
 
 
 def pl_resolve(ci, cj):
-    """Return all clauses that can be obtained by resolving clauses ci and cj."""
+    """
+    Realiza la resolución entre dos cláusulas ci y cj. Retorna todas
+    las cláusulas derivadas al resolverlas.
+    """
     clauses = []
     for di in disjuncts(ci):
         for dj in disjuncts(cj):
@@ -102,13 +134,9 @@ def pl_resolve(ci, cj):
 # ______________________________________________________________________________
 
 def associate(op, args):
-    """Given an associative op, return an expression with the same
-    meaning as Expr(op, *args), but flattened -- that is, with nested
-    instances of the same op promoted to the top level.
-    >>> associate('&', [(A&B),(B|C),(B&C)])
-    (A & B & C & (B | C))
-    >>> associate('|', [A|(B|(C|(A&B)))])
-    (A | B | C | (A & B))
+    """
+    simplifica expresiones al asociar operaciones lógicas del mismo tipo.
+    Combina argumentos anidados en una estructura plana.
     """
     args = dissociate(op, args)
     if len(args) == 0:
@@ -121,10 +149,8 @@ def associate(op, args):
 _op_identity = {And: True, Or: False}
 
 def dissociate(op, args):
-    """Given an associative op, return a flattened list result such
-    that Expr(op, *result) means the same as Expr(op, *args).
-    >>> dissociate('&', [A & B])
-    [A, B]
+    """
+    Descompone expresiones lógicas en lsitas planas de argumentos.
     """
     result = []
 
@@ -139,7 +165,7 @@ def dissociate(op, args):
     return result
 
 def conjuncts(expr):
-    """Return a list of the conjuncts in the sentence s.
+    """Retorna una lista de los conjuntos en una expresion lógica.
     >>> conjuncts(A & B)
     [A, B]
     >>> conjuncts(A | B)
@@ -148,7 +174,7 @@ def conjuncts(expr):
     return dissociate(And, [expr])
 
 def disjuncts(expr):
-    """Return a list of the disjuncts in the sentence s.
+    """Retorna una lista de los disjuntos en una expresión lógica.
     >>> disjuncts(A | B)
     [A, B]
     >>> disjuncts(A & B)
@@ -161,15 +187,21 @@ def disjuncts(expr):
 # Utils
 
 def first(iterable, default=None):
-    """Return the first element of an iterable; or default."""
+    """
+    Retorna el primer elemento de un iterable o un valor predeterminado.
+    """
     return next(iter(iterable), default)
 
 def unique(seq):
-    """Remove duplicate elements from seq. Assumes hashable elements."""
+    """
+    Elimina elementos duplicados de una secuencia, asumiendo que son 'hasheables'.
+    """
     return list(set(seq))
 
 def remove_all(item, seq):
-    """Return a copy of seq (or string) with all occurrences of item removed."""
+    """
+    Retorna una copia de una secuencia o cadena con todas las ocurrencias de un ítem eliminadas.
+    """
     if isinstance(seq, str):
         return seq.replace(item, '')
     elif isinstance(seq, set):
@@ -178,70 +210,3 @@ def remove_all(item, seq):
         return rest
     else:
         return [x for x in seq if x != item]
-
-
-# ______________________________________________________________________________
-# Pruebas
-
-if __name__ == '__main__':
-    # Prueba 1 - Base de conocimiento del mundo de Wumpus
-    # ---------------------------------------------------
-    wumpus_kb = PropKB()
-    P11, P12, P21, P22, P31, B11, B21 = symbols('P11 P12 P21 P22 P31 B11 B21')
-
-    wumpus_kb.tell(~P11)
-    wumpus_kb.tell(Equivalent(B11, (P12 | P21)))
-    wumpus_kb.tell(Equivalent(B21, (P11 | P22 | P31)))
-    wumpus_kb.tell(~B11)
-    wumpus_kb.tell(B21)
-
-    # Descomentar el codigo para ver las soluciones respectivas
-    # for i in wumpus_kb.clauses:
-    #     print(i)
-    
-    # print(f"\n{pl_resolution(wumpus_kb, ~P11), pl_resolution(wumpus_kb, P11)}")
-    # print(f"\n{pl_resolution(wumpus_kb, ~P22), pl_resolution(wumpus_kb, P22)}")
-    
-    
-    # Prueba 2 - Problema de dopaje
-    # ----------------------------------
-    baseConocimiento = PropKB()
-    Da, Db, Dc, A, B, C = symbols("Da Db Dc A B C")
-    
-    # baseConocimiento.tell(Equivalent(Da, (B | C) & ~(B & C)))
-    # baseConocimiento.tell(Equivalent(Db, (A | C) & ~(A & C)))
-    # baseConocimiento.tell(Equivalent(Dc, (A | B) & ~(A & B)))
-    # baseConocimiento.tell((~Da & Db & Dc) | (Da & ~Db & Dc) | (Da & Db & ~Dc))
-    
-    dijoAlice =(B | C) & ~(B & C)
-    dijoBob = (A | C) & ~(A & C)
-    dijoCharlie = (A | B) & ~(A & B)
-    
-    baseConocimiento.tell(dijoAlice)
-    baseConocimiento.tell(dijoBob)
-    baseConocimiento.tell(dijoCharlie)
-    baseConocimiento.tell(A)
-    
-    for i in baseConocimiento.clauses:
-        print(i)
-    
-    print()
-    print(pl_resolution(baseConocimiento, ~A))
-    # print(pl_resolution(baseConocimiento, ~B))
-    # print(pl_resolution(baseConocimiento, C))
-    
-    # print(pl_resolution(baseConocimiento, B))
-    # print(pl_resolution(baseConocimiento, C))
-    
-    
-    
-    # Prueba 3 - Problema con Q
-    # ----------------------------------
-    # prueba3 = PropKB()
-    # Q = symbols("Q")
-    
-    # prueba3.tell(Q)
-    
-    # # print(prueba3.clauses)
-    # print(sympify("Q"))
-    
