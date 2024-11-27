@@ -244,7 +244,7 @@ if __name__ == '__main__':
 
     # Declaraciones
     regla1 = M>>I           # Si es mítico, entonces es inmortal
-    regla2 = ~M >> Ma      # Si no es mítico, entonces es mamífero
+    regla2 = ~M >> (Ma & ~I)      # Si no es mítico, entonces es mamífero
     regla3 = (I | Ma) >> H    # Si es inmortal o mamífero, entonces tiene cuernos
     regla4 = H >> Mg           # Si tiene cuernos, entonces es mágico
 
@@ -254,9 +254,11 @@ if __name__ == '__main__':
     baseConocimiento.tell(regla2)
     baseConocimiento.tell(regla3)
     baseConocimiento.tell(regla4)
-    baseConocimiento.tell(~Ma)
+    baseConocimiento.tell(M)
 
     print("Cláusulas en la Base de Conocimiento:")
+
+    print("Caso 1: Unicornio es mítico")
     for clause in baseConocimiento.clauses:
         print(clause)
 
@@ -264,3 +266,15 @@ if __name__ == '__main__':
     print("¿El unicornio es mítico?", pl_resolution(baseConocimiento, M))
     print("¿El unicornio es mágico?", pl_resolution(baseConocimiento, Mg))
     print("¿El unicornio tiene cuernos?", pl_resolution(baseConocimiento, H))
+    print("¿El unicornio es inmortal?", pl_resolution(baseConocimiento, I))
+    print("¿El unicornio es un mamífero?", pl_resolution(baseConocimiento, Ma))
+
+    print("\nCaso 2: Unicornio no es mítico")
+
+    baseConocimiento.retract(M)
+    baseConocimiento.tell(~M)
+    print("¿El unicornio es mítico?", pl_resolution(baseConocimiento, M))
+    print("¿El unicornio es mágico?", pl_resolution(baseConocimiento, Mg))
+    print("¿El unicornio tiene cuernos?", pl_resolution(baseConocimiento, H))
+    print("¿El unicornio es inmortal?", pl_resolution(baseConocimiento, I))
+    print("¿El unicornio es un mamífero?", pl_resolution(baseConocimiento, Ma))
