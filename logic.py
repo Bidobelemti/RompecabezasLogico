@@ -210,3 +210,30 @@ def remove_all(item, seq):
         return rest
     else:
         return [x for x in seq if x != item]
+
+if __name__ == '__main__':
+
+    
+    # Definir símbolos
+    A, B, C = symbols("A B C")  # A: Alice tomó drogas, B: Bob, C: Charlie
+
+    # Declaraciones de los sospechosos
+    dijoAlice = (B | C) & ~(B & C)  # Bob o Charlie, pero no ambos
+    dijoBob = (A | C) & ~(A & C)    # Ali   ce o Charlie, pero no ambos
+    dijoCharlie = (A | B) & ~(A & B)  # Alice o Bob, pero no ambos
+
+    # Crear Base de Conocimiento
+    baseConocimiento = PropKB()
+    baseConocimiento.tell(dijoAlice)
+    baseConocimiento.tell(dijoCharlie)
+    baseConocimiento.tell(C) #Se dice que Charlie esta dopado, reduce incertidumbre
+
+    print("Cláusulas en la Base de Conocimiento:")
+    for clause in baseConocimiento.clauses:
+        print(clause)
+
+    # Verificar quién es culpable
+    print("¿Alice es culpable?", pl_resolution(baseConocimiento, A))  # Resolución para A
+    print("¿Bob es culpable?", pl_resolution(baseConocimiento, B))    # Resolución para B
+    print("¿Charlie es culpable?", pl_resolution(baseConocimiento, C))  # Resolución para C
+    
