@@ -213,7 +213,7 @@ def remove_all(item, seq):
 
 if __name__ == '__main__':
 
-    
+    #Problema 1
     # Definir símbolos
     A, B, C = symbols("A B C")  # A: Alice tomó drogas, B: Bob, C: Charlie
 
@@ -236,4 +236,31 @@ if __name__ == '__main__':
     print("¿Alice es culpable?", pl_resolution(baseConocimiento, A))  # Resolución para A
     print("¿Bob es culpable?", pl_resolution(baseConocimiento, B))    # Resolución para B
     print("¿Charlie es culpable?", pl_resolution(baseConocimiento, C))  # Resolución para C
+
+    print("---------------------------------\nProblema 2\n")
     
+    #Problema 2
+    M, I, Ma, H, Mg = symbols("M I Ma H Mg")  # M: mítico, I: inmortal, Ma: mamífero, H: cuernos, Mg: mágico
+
+    # Declaraciones
+    regla1 = M>>I           # Si es mítico, entonces es inmortal
+    regla2 = ~M >> Ma      # Si no es mítico, entonces es mamífero
+    regla3 = (I | Ma) >> H    # Si es inmortal o mamífero, entonces tiene cuernos
+    regla4 = H >> Mg           # Si tiene cuernos, entonces es mágico
+
+    # Crear Base de Conocimiento
+    baseConocimiento = PropKB()
+    baseConocimiento.tell(regla1)
+    baseConocimiento.tell(regla2)
+    baseConocimiento.tell(regla3)
+    baseConocimiento.tell(regla4)
+    baseConocimiento.tell(~Ma)
+
+    print("Cláusulas en la Base de Conocimiento:")
+    for clause in baseConocimiento.clauses:
+        print(clause)
+
+    # Preguntas
+    print("¿El unicornio es mítico?", pl_resolution(baseConocimiento, M))
+    print("¿El unicornio es mágico?", pl_resolution(baseConocimiento, Mg))
+    print("¿El unicornio tiene cuernos?", pl_resolution(baseConocimiento, H))
